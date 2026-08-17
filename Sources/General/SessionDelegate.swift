@@ -33,7 +33,7 @@ internal class SessionDelegate: NSObject {
 
 extension SessionDelegate: URLSessionDownloadDelegate {
     public func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
-        manager?.didBecomeInvalidation(withError: error)
+        manager?.didBecomeInvalidation(session, withError: error)
     }
 
     public func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {

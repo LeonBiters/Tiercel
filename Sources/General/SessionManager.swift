@@ -1006,7 +1006,16 @@ extension SessionManager {
 
 // MARK: - call back
 extension SessionManager {
-    internal func didBecomeInvalidation(withError error: Error?) {
+    internal func didBecomeInvalidation(_ invalidatedSession: URLSession, withError error: Error?) {
+        let isCurrentSession = session === invalidatedSession
+        guard shouldCreatSession || isCurrentSession else { return }
+
+        if isCurrentSession {
+            // 系统也可能主动让后台 Session 失效，重建前不能继续使用旧对象。
+            session = nil
+            shouldCreatSession = true
+        }
+
         createSession { [weak self] in
             guard let self = self else { return }
             self.restartTasks.forEach { self._start($0) }
@@ -1022,4 +1031,3 @@ extension SessionManager {
     }
     
 }
-

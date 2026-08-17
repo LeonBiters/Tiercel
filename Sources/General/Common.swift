@@ -109,22 +109,39 @@ extension TiercelCompatible {
     }
 }
 
+private final class WeakDownloadTaskBox {
+    weak var value: DownloadTask?
+
+    init(_ value: DownloadTask) {
+        self.value = value
+    }
+}
+
 extension URLSessionTask {
     private struct AssociatedKeys {
         static var tiercelTask: UInt8 = 0
     }
 
-    internal weak var tiercelTask: DownloadTask? {
+    internal var tiercelTask: DownloadTask? {
         get {
-            return objc_getAssociatedObject(self, &AssociatedKeys.tiercelTask) as? DownloadTask
+            let box = objc_getAssociatedObject(
+                self, &AssociatedKeys.tiercelTask
+            ) as? WeakDownloadTaskBox
+            return box?.value
         }
         set {
+            // 关联对象的 assign 不会自动置空，使用弱引用容器保存下载任务。
             if let newValue = newValue {
                 objc_setAssociatedObject(
-                    self, &AssociatedKeys.tiercelTask, newValue, .OBJC_ASSOCIATION_ASSIGN)
+                    self,
+                    &AssociatedKeys.tiercelTask,
+                    WeakDownloadTaskBox(newValue),
+                    .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+                )
             } else {
                 objc_setAssociatedObject(
-                    self, &AssociatedKeys.tiercelTask, nil, .OBJC_ASSOCIATION_ASSIGN)
+                    self, &AssociatedKeys.tiercelTask, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+                )
             }
         }
     }
